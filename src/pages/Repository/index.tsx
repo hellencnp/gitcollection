@@ -1,0 +1,92 @@
+import React from 'react'
+import { useRouteMatch } from 'react-router-dom';
+import {api} from '../../services/api'
+import logo from '../../assets/logo.svg'
+import {Header, RepoInfo} from './styles'
+import {FiChevronLeft} from 'react-icons/fi'
+import {Link} from 'react-router-dom'
+
+
+//criar duas interfaces - que sao tipos de dados
+interface RepositoryParams{
+    repository: string;
+}
+
+interface GithubRepository{
+    full_name: string;
+    description: string;
+    forks_count: number;
+    open_issues_count: number;
+    stargazers_count:number;
+    owner:{
+        login: string;
+        avatar_url:string;
+    }
+
+}
+
+interface GithubIssue{
+    id: number;
+    title: string;
+    html_url:string;
+    user:{
+        login:string;
+    }
+}
+
+export const Repository:React.FC = () => {
+
+    const [repository, setRepository] = React.useState<GithubRepository | null>(null);
+    const [issues, setIssues] = React.useState <GithubIssue []>([]);
+    const {params} = useRouteMatch<RepositoryParams>()
+
+    React.useEffect(() =>{
+        const config ={
+            headers:{Authorization: `Bearer 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`}
+        };
+
+        api
+        .get<GithubRepository>(`repos/${params.repository}`, config)
+        .then(response => setRepository(response.data))
+
+        api
+        .get<GithubIssue[]>(`repos/${params.repository}/issues`, config)
+        .then(response => setIssues(response.data))
+
+    }, [params.repository])
+
+    return (
+        <>
+            <Header>
+                <img src={logo} alt="GitCollection"/>
+                <Link to="/">
+                <FiChevronLeft/> Voltar
+                </Link>
+            </Header>
+            {repository &&(
+                <RepoInfo>
+                    <header>
+                        <img src={repository.owner.avatar_url} alt={repository.owner.login}/>
+                        <div>
+                            <strong>{repository.full_name}</strong>
+                            <p>{repository.description}</p>
+                        </div>
+                    </header>
+                    <ul>
+                        <li>
+                            <strong>{repository.stargazers_count}</strong> <span>Stars</span>
+                        </li>
+                        <li>
+                            <strong>{repository.forks_count}</strong> <span>Forks</span>
+                        </li>
+                        <li>
+                            <strong>{repository.open_issues_count}</strong> <span>Issues abertas</span>
+                        </li>
+
+                    </ul>
+                </RepoInfo>
+            )}
+        </>
+    )
+}
+
